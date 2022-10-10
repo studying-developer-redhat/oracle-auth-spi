@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>keycloak-service-providers</artifactId>
+    <groupId>com.redhat.keycloak.spi</groupId>
+    <packaging>pom</packaging>
+    <version>1.0</version>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <modules>
+        <module>keycloak-sql-federation</module>
+    </modules>
+
+    <developers>
+        <developer>
+            <id>osvaldormelo</id>
+            <name>Osvaldo Melo</name>
+            <url>https://github.com/osvaldormelo</url>
+        </developer>
+    </developers>
+
+    <properties>
+        <maven.min.version>3.10.1</maven.min.version>
+        <maven.compiler.plugin.version>3.5.1</maven.compiler.plugin.version>
+        <maven-assembly-plugin.version>3.4.2</maven-assembly-plugin.version>
+        <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
+
+        <product.rhsso.version>7.6.0.GA</product.rhsso.version>
+        <keycloak.version>18.0.0.redhat-00001</keycloak.version>
+        <keycloak.bom.version>18.0.0.redhat-00001</keycloak.bom.version>
+
+        <commons-lang.version>2.6.0.redhat-7</commons-lang.version>
+        <commons-lang3.version>3.11.0.redhat-00001</commons-lang3.version>
+        <commons-io.version>2.10.0.redhat-00001</commons-io.version>
+        <commons-codec.version>1.15.0.redhat-00001</commons-codec.version>
+        <jackson.version>2.12.1.redhat-00001</jackson.version>
+        <jackson.databind.version>2.12.1.redhat-00001</jackson.databind.version>
+        <jackson.annotations.version>${jackson.databind.version}</jackson.annotations.version>
+        <hibernate.core.version>5.6.5.Final-redhat-00001</hibernate.core.version>
+        <hibernate.c3p0.version>5.3.27.Final-redhat-00001</hibernate.c3p0.version>
+        <!-- <hibernate.core.version>5.3.25.Final-redhat-00002</hibernate.core.version>
+        <hibernate.c3p0.version>5.3.20.Final-redhat-00001</hibernate.c3p0.version>-->
+        <infinispan.version>11.0.15.Final-redhat-00001</infinispan.version>
+        <jboss.logging.version>3.4.1.Final-redhat-00001</jboss.logging.version>
+        <log4j.version>1.2.17</log4j.version>
+        <slf4j-api.version>1.7.22.redhat-2</slf4j-api.version>
+        <slf4j.version>1.7.30.redhat-00004</slf4j.version>
+
+        <!-- Databases (need to check supported driver versions) -->
+        <mysql.version>8.0.23</mysql.version>
+        <mysql.driver.version>8.0.23.redhat-00001</mysql.driver.version>
+        <postgresql.version>13.2</postgresql.version>
+        <postgresql.driver.version>42.3.3.redhat-00001</postgresql.driver.version>
+        <mariadb.version>10.3.27</mariadb.version>
+        <mariadb.driver.version>2.7.2.redhat-00001</mariadb.driver.version>
+        <mssql.version>2019-CU10-ubuntu-20.04</mssql.version>
+        <mssql.driver.version>9.2.0.jre8</mssql.driver.version>
+        <oracle.driver.version>19.3.0.0</oracle.driver.version>
+
+        <nexusReleaseRepoUrl></nexusReleaseRepoUrl>
+        <nexusSnapshotRepoUrl></nexusSnapshotRepoUrl>
+
+        <java.version>1.8</java.version>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    </properties>
+
+    <distributionManagement>
+        <repository>
+            <id>nexus-releases</id>
+            <url>${nexusReleaseRepoUrl}</url>
+        </repository>
+        <snapshotRepository>
+            <id>nexus-snapshots</id>
+            <url>${nexusSnapshotRepoUrl}</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <repositories>
+        <!-- maven central repository -->
+        <!-- do not use this in production, use your own maven repository -->
+        <repository>
+            <id>central</id>
+            <name>Maven Central Repository</name>
+            <url>https://repo.maven.apache.org/maven2</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <!-- redhat official maven repositories -->
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>red-hat-ga-repository</id>
+            <name>Red Hat GA Repository</name>
+            <url>https://maven.repository.redhat.com/ga</url>
+        </repository>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>red-hat-ea-repository</id>
+            <name>Red Hat EA Repository</name>
+            <url>https://maven.repository.redhat.com/earlyaccess/all/</url>
+        </repository>
+        <!-- jboss.org repository -->
+        <!-- Due to error: Could not find artifact org.glassfish:javax.el-impl:jar:3.0.1-b08-jbossorg-1 -->
+        <!-- https://issues.redhat.com/browse/THORN-776?workflowName=SWARM+Kanban+workflow+v1&stepId=1 -->
+        <!-- https://issues.redhat.com/browse/THORN-549?attachmentOrder=desc -->
+        <!-- https://www.39mo.com/43/536323.php -->
+        <!-- https://mvnrepository.com/artifact/org.glassfish/javax.el-impl/3.0.1-b08-jbossorg-1 -->
+        <repository>
+            <id>jboss-public-repository-group</id>
+            <name>JBoss Public Repository Group</name>
+            <url>https://repository.jboss.org/nexus/content/groups/public/</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>maven-ga-repository</id>
+            <url>https://repo.maven.apache.org/maven2/</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </pluginRepository>
+        <pluginRepository>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>red-hat-ga-repository</id>
+            <name>Red Hat GA Repository</name>
+            <url>https://maven.repository.redhat.com/ga</url>
+        </pluginRepository>
+        <pluginRepository>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>red-hat-ea-repository</id>
+            <name>Red Hat EA Repository</name>
+            <url>https://maven.repository.redhat.com/earlyaccess/all/</url>
+        </pluginRepository>
+    </pluginRepositories>
+
+</project>

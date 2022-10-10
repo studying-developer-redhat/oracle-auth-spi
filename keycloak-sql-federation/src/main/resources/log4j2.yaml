@@ -1,0 +1,51 @@
+Configuration:
+  status: warn
+
+  Appenders:
+    Console:
+      name: LogToConsole
+      target: SYSTEM_OUT
+      PatternLayout:
+        Pattern: "[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %c{1} - %msg%n"
+
+    RollingFile:
+      - name: LogToRollingFile
+        fileName: logs/app.log
+        filePattern: "logs/$${date:yyyy-MM}/app-%d{MM-dd-yyyy}-%i.log.gz"
+        PatternLayout:
+          pattern: "[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %c{1} - %msg%n"
+        Policies:
+          SizeBasedTriggeringPolicy:
+            size: 10MB
+        DefaultRollOverStrategy:
+          max: 10
+
+  Loggers:
+    logger:
+      - name: org.hibernate
+        level: info
+        additivity: false
+        AppenderRef:
+          - ref: LogToConsole
+          - ref: LogToRollingFile
+      - name: org.hibernate.SQL
+        level: debug
+        additivity: false
+        AppenderRef:
+          - ref: LogToConsole
+          - ref: LogToRollingFile
+      - name: org.hibernate.type.descriptor.sql
+        level: trace
+        additivity: false
+        AppenderRef:
+          - ref: LogToConsole
+          - ref: LogToRollingFile
+
+    Root:
+      AppenderRef:
+        - ref: LogToConsole
+        - ref: LogToRollingFile
+      level: trace
+
+#  logging.level.com.zaxxer.hikari.HikariConfig=DEBUG
+#  logging.level.com.zaxxer.hikari=TRACE

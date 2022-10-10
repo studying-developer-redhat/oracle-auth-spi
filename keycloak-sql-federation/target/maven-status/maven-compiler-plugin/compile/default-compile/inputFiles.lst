@@ -1,0 +1,17 @@
+/Users/omelo/Repos/oracle-auth-spi/keycloak-sql-federation/src/main/java/com/redhat/rhsso/spi/repository/BaseFederationRepository.java
+/Users/omelo/Repos/oracle-auth-spi/keycloak-sql-federation/src/main/java/com/redhat/rhsso/spi/model/Person.java
+/Users/omelo/Repos/oracle-auth-spi/keycloak-sql-federation/src/main/java/com/redhat/rhsso/spi/repository/GenericRepository.java
+/Users/omelo/Repos/oracle-auth-spi/keycloak-sql-federation/src/main/java/com/redhat/rhsso/spi/model/User.java
+/Users/omelo/Repos/oracle-auth-spi/keycloak-sql-federation/src/main/java/com/redhat/rhsso/spi/config/UserFederationConfig.java
+/Users/omelo/Repos/oracle-auth-spi/keycloak-sql-federation/src/main/java/com/redhat/rhsso/spi/adapter/UserAdapter.java
+/Users/omelo/Repos/oracle-auth-spi/keycloak-sql-federation/src/main/java/com/redhat/rhsso/spi/validator/AbstractValidator.java
+/Users/omelo/Repos/oracle-auth-spi/keycloak-sql-federation/src/main/java/com/redhat/rhsso/spi/helper/IdentityHelper.java
+/Users/omelo/Repos/oracle-auth-spi/keycloak-sql-federation/src/main/java/com/redhat/rhsso/spi/helper/CredentialHelper.java
+/Users/omelo/Repos/oracle-auth-spi/keycloak-sql-federation/src/main/java/com/redhat/rhsso/spi/OracleUserStorageProvider.java
+/Users/omelo/Repos/oracle-auth-spi/keycloak-sql-federation/src/main/java/com/redhat/rhsso/spi/validator/impl/PasswordValidator.java
+/Users/omelo/Repos/oracle-auth-spi/keycloak-sql-federation/src/main/java/com/redhat/rhsso/spi/config/Constants.java
+/Users/omelo/Repos/oracle-auth-spi/keycloak-sql-federation/src/main/java/com/redhat/rhsso/spi/config/ProviderValidationProperty.java
+/Users/omelo/Repos/oracle-auth-spi/keycloak-sql-federation/src/main/java/com/redhat/rhsso/spi/repository/impl/UserRepository.java
+/Users/omelo/Repos/oracle-auth-spi/keycloak-sql-federation/src/main/java/com/redhat/rhsso/spi/validator/AbstractPasswordValidator.java
+/Users/omelo/Repos/oracle-auth-spi/keycloak-sql-federation/src/main/java/com/redhat/rhsso/spi/OracleXAConnectionTest.java
+/Users/omelo/Repos/oracle-auth-spi/keycloak-sql-federation/src/main/java/com/redhat/rhsso/spi/OracleUserStorageProviderFactory.java
