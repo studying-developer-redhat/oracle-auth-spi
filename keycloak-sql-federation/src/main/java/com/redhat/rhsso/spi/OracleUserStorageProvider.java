@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.rhsso.spi.adapter.UserAdapter;
 import com.redhat.rhsso.spi.config.UserFederationConfig;
 import com.redhat.rhsso.spi.helper.CredentialHelper;
-import com.redhat.rhsso.spi.model.User;
+import com.redhat.rhsso.spi.model.entity.User;
 import com.redhat.rhsso.spi.repository.impl.UserRepository;
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
@@ -19,7 +19,7 @@ import org.keycloak.credential.CredentialInputValidator;
 import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
-import org.keycloak.storage.UserStorageProviderModel;
+
 import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
 import javax.ejb.Local;
@@ -30,10 +30,9 @@ import javax.persistence.PersistenceContext;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.cache.OnUserCache;
+
 import java.util.*;
 
 // https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.6/html-single/server_developer_guide/index#user-storage-spi
@@ -104,7 +103,8 @@ public class OracleUserStorageProvider
             return false;
         }
 
-        User entity = new User().setUsername(userModel.getUsername());
+        User entity = new User();
+        entity.setUsername(userModel.getUsername());
         entity.setPassword(input.getChallengeResponse());
         getRepository().updateUser(entity);
 

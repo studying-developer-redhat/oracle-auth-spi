@@ -1,6 +1,5 @@
 package com.redhat.rhsso.spi;
 
-import com.redhat.rhsso.spi.model.User;
 import oracle.jdbc.xa.client.OracleXADataSource;
 
 import java.sql.Connection;

@@ -1,7 +1,6 @@
 package com.redhat.rhsso.spi.adapter;
 
-import com.redhat.rhsso.spi.OracleUserStorageProvider;
-import com.redhat.rhsso.spi.model.User;
+import com.redhat.rhsso.spi.model.entity.User;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
@@ -9,7 +8,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
-import java.util.LinkedList;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;

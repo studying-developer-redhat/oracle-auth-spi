@@ -1,7 +1,7 @@
 package com.redhat.rhsso.spi.helper;
 
 import com.redhat.rhsso.spi.config.UserFederationConfig;
-import com.redhat.rhsso.spi.model.User;
+import com.redhat.rhsso.spi.model.entity.User;
 import com.redhat.rhsso.spi.validator.impl.PasswordValidator;
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;

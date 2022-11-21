@@ -4,13 +4,12 @@ import com.redhat.rhsso.spi.adapter.UserAdapter;
 import com.redhat.rhsso.spi.config.UserFederationConfig;
 import com.redhat.rhsso.spi.helper.CredentialHelper;
 import com.redhat.rhsso.spi.helper.IdentityHelper;
-import com.redhat.rhsso.spi.model.Person;
-import com.redhat.rhsso.spi.model.User;
+import com.redhat.rhsso.spi.model.entity.Person;
+import com.redhat.rhsso.spi.model.entity.User;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.ejb.*;
 import javax.persistence.EntityManager;
-import javax.persistence.EntityTransaction;
 import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 import javax.transaction.*;
@@ -25,7 +24,6 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.storage.UserStorageProviderModel;
 
 @Stateless
 @TransactionManagement(TransactionManagementType.BEAN)
