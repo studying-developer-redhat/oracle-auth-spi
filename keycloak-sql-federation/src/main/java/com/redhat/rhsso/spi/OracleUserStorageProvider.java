@@ -4,19 +4,22 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redhat.rhsso.spi.adapter.UserAdapter;
 import com.redhat.rhsso.spi.config.UserFederationConfig;
+import com.redhat.rhsso.spi.exception.BusinessException;
 import com.redhat.rhsso.spi.helper.CredentialHelper;
 import com.redhat.rhsso.spi.model.entity.User;
 import com.redhat.rhsso.spi.repository.impl.UserRepository;
+import lombok.SneakyThrows;
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialInput;
+import org.keycloak.credential.CredentialInputUpdater;
+import org.keycloak.credential.CredentialInputValidator;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.models.*;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.user.UserLookupProvider;
-import org.keycloak.credential.CredentialInputValidator;
-import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
 
@@ -27,12 +30,6 @@ import javax.ejb.Remove;
 import javax.ejb.Stateful;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
-
 import java.util.*;
 
 // https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.6/html-single/server_developer_guide/index#user-storage-spi
@@ -93,6 +90,7 @@ public class OracleUserStorageProvider
         return adapter;
     }
 
+    @SneakyThrows
     @Override
     public boolean updateCredential(RealmModel realmModel, UserModel userModel, CredentialInput input) {
         if (!supportsCredentialType(input.getType()) || !(input instanceof UserCredentialModel)) return false;
@@ -106,8 +104,14 @@ public class OracleUserStorageProvider
         User entity = new User();
         entity.setUsername(userModel.getUsername());
         entity.setPassword(input.getChallengeResponse());
-        getRepository().updateUser(entity);
+        // TODO: VERIFY
+        Boolean isUpdated = getRepository().updateUser(entity);
 
+        if (!isUpdated) {
+            // throw new BusinessException("An error occurred while trying to update the user.");
+            logger.info("An error occurred while trying to update the user.");
+            return false;
+        }
         return true;
     }
 
@@ -190,12 +194,7 @@ public class OracleUserStorageProvider
 
     @Override
     public UserModel getUserByEmail(String email, RealmModel realm) {
-        if (em == null) {
-            System.out.println("A1");
-        }
-
         User user = getRepository().getUserByEmail(email);
-
         return user == null ? null : new UserAdapter(session, realm, model, user);
     }
 
@@ -261,11 +260,10 @@ public class OracleUserStorageProvider
 
     public UserRepository getRepository() {
         if (getConfig() == null) {
-            System.out.println("config is null in OracleUserStorageProvider");
+            logger.info("getRepository() config is null in OracleUserStorageProvider");
         }else {
-            System.out.println("config set properly in OracleUserStorageProvider");
+            logger.info("getRepository() config set properly in OracleUserStorageProvider");
         }
-
         this.repository.setConfig(getConfig());
         return this.repository;
     }
@@ -277,5 +275,4 @@ public class OracleUserStorageProvider
         this.repository = null;
         logger.info("closing....");
     }
-
 }

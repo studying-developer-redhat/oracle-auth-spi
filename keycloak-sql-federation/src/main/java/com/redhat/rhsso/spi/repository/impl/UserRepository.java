@@ -40,7 +40,7 @@ public class UserRepository extends BaseFederationRepository<User> {
 
     protected KeycloakSession session;
 
-    @PersistenceContext(name = "keycloak-user-storage-jpa")
+    @PersistenceContext
     protected EntityManager em;
 
     @EJB
