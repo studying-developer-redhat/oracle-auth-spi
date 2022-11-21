@@ -2,22 +2,11 @@ package com.redhat.rhsso.spi.repository.impl;
 
 import com.redhat.rhsso.spi.adapter.UserAdapter;
 import com.redhat.rhsso.spi.config.UserFederationConfig;
-import com.redhat.rhsso.spi.helper.CredentialHelper;
 import com.redhat.rhsso.spi.helper.IdentityHelper;
+import com.redhat.rhsso.spi.model.builder.create.PersonCreateBuilder;
+import com.redhat.rhsso.spi.model.builder.create.UserCreateBuilder;
 import com.redhat.rhsso.spi.model.entity.Person;
 import com.redhat.rhsso.spi.model.entity.User;
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
-import javax.ejb.*;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.persistence.TypedQuery;
-import javax.transaction.*;
-import java.sql.Date;
-import java.time.LocalDate;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
 import com.redhat.rhsso.spi.repository.BaseFederationRepository;
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
@@ -25,8 +14,22 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
+import javax.annotation.PostConstruct;
+import javax.ejb.EJB;
+import javax.ejb.Remove;
+import javax.ejb.Stateless;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.PersistenceException;
+import javax.persistence.TypedQuery;
+import javax.transaction.Transactional;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Stateless
-@TransactionManagement(TransactionManagementType.BEAN)
+@Transactional
 public class UserRepository extends BaseFederationRepository<User> {
 
     protected static final Logger logger = Logger.getLogger(UserRepository.class);
@@ -37,11 +40,14 @@ public class UserRepository extends BaseFederationRepository<User> {
 
     protected KeycloakSession session;
 
-    @PersistenceContext
-    EntityManager em;
+    @PersistenceContext(name = "keycloak-user-storage-jpa")
+    protected EntityManager em;
 
-    @Resource
-    private UserTransaction userTransaction;
+    @EJB
+    private PersonCreateBuilder personCreateBuilder;
+
+    @EJB
+    private UserCreateBuilder userCreateBuilder;
 
     public UserFederationConfig getConfig() {
         return config;
@@ -58,85 +64,64 @@ public class UserRepository extends BaseFederationRepository<User> {
 
     @Override
     public User getUserById(Long id) {
-        logger.debugf("getUserById called with id = {}", id);
+        logger.info("getUserById() called with id: " + id);
 
         User entity = em.find(User.class, id);
 
         if (entity == null || entity.getId() == null) {
-            logger.debugf("could not find user by id: {}", id);
+            logger.info("could not find user by id:" + id);
             return null;
         }
 
-        logger.debugf("Found user id: {}", entity.getId());
+        logger.info("Found user id: " + entity.getId());
 
         return entity;
     }
 
-    @Override
     public User getUserByUsername(String username) {
-        logger.debugf("getUserByUsername called with username = {}", username);
-
+        logger.info("getUserByUsername() called with username: " + username);
         List<User> result = Collections.EMPTY_LIST;
 
         try {
-            TypedQuery<User> query = em.createNamedQuery("getUserByUsername", User.class);
+            TypedQuery<User> query = em.createNamedQuery(User.GET_USER_BY_USERNAME, User.class);
             query.setParameter("username", username);
-            query.setHint("org.hibernate.comment", "search user by username.");
 
             result = query.getResultList();
 
             if (result.isEmpty()) {
-                logger.debugf("username {} not found", username);
+                logger.infof("username {} not found", username);
             }
         }catch (Exception e) {
-            logger.debugf("getUserByUsername failed with message: {}", e.getMessage());
+            logger.infof("getUserByUsername() failed with message: {}", e.getMessage());
         }
 
         return result.isEmpty() ? null : result.get(0);
     }
 
     @Override
-    public User getUserByEmail(String email) {
-        logger.debugf("getUserByEmail called with email = {}", email);
+    public User getUserByEmail(final String email) {
+        logger.infof("getUserByEmail() called with email: {}", email);
 
-        if (this.config == null) {
-            System.out.println("A");
-        } else {
-            if (this.config.queryUserByEmail() == null) {
-                System.out.println("B");
-            }
-        }
-        if (entityManager == null) {
-            System.out.println("C");
-        }
-
-        TypedQuery<User> query = em.createQuery(this.config.queryUserByEmail(), User.class);
+        TypedQuery<User> query = em.createNamedQuery(User.GET_USER_BY_EMAIL,  User.class);
         query.setParameter("email", email);
-
         List<User> result = query.getResultList();
-
         if (result.isEmpty()) {
             logger.infof("could not find user by email: {}", email);
         }
-
         return result.isEmpty() ? null : result.get(0);
     }
 
     @Override
     public int getUsersCount() {
-        logger.debug("getUsersCount called");
-
-        TypedQuery<User> query = em.createQuery(this.config.queryUserCount(), User.class);
-        Object count = query.getSingleResult();
-        return count == null ? null : ((Number) count).intValue();
+        logger.info("getUsersCount() called");
+        return ((Number) em.createNamedQuery(User.GET_USER_COUNT).getSingleResult()).intValue();
     }
+
 
     @Override
     public List<UserModel> getUsers(Integer firstResult, Integer maxResults, RealmModel realm) {
-        logger.debug("getUsers called");
-
-        TypedQuery<User> query = em.createQuery(this.config.queryAllUsers(), User.class);
-
+        logger.info("getUsers called");
+        TypedQuery<User> query = em.createNamedQuery(User.GET_ALL_USERS, User.class);
         List<User> results = query.getResultList();
 
         if (firstResult >= 0)
@@ -149,23 +134,21 @@ public class UserRepository extends BaseFederationRepository<User> {
             return Collections.EMPTY_LIST;
         }
 
-        List<UserModel> users = new LinkedList<>();
-        for (User entity : results) users.add(new UserAdapter(this.session, realm, this.model, entity));
-
-        return users;
+        return getUsersModel(realm, results);
     }
 
     @Override
-    public List<UserModel> searchForUserByUsernameOrEmail(String search, Integer firstResult, Integer maxResults, RealmModel realm) {
-        logger.debugf("searchForUserByUsernameOrEmail called with search = {}", search);
+    public List<UserModel> searchForUserByUsernameOrEmail(String search, Integer firstResult, Integer maxResults,
+                                                          RealmModel realm) {
+        logger.infof("searchForUserByUsernameOrEmail called with search: {}", search);
 
-        TypedQuery<User> query = em.createQuery(this.config.querySearchForUser(), User.class);
-
+        TypedQuery<User> query = em.createNamedQuery(User.SEARCH_FOR_USERNAME_OR_EMAIL, User.class);
         query.setParameter("search", "%" + search.toLowerCase() + "%");
 
         if (firstResult != -1) {
             query.setFirstResult(firstResult);
         }
+
         if (maxResults != -1) {
             query.setMaxResults(maxResults);
         }
@@ -177,116 +160,47 @@ public class UserRepository extends BaseFederationRepository<User> {
             return Collections.EMPTY_LIST;
         }
 
-        List<UserModel> users = new LinkedList<>();
-
-        for (User entity : results) users.add(new UserAdapter(this.session, realm, this.model, entity));
-        return users;
+        return getUsersModel(realm, results);
     }
 
     // https://access.redhat.com/solutions/32314
     // https://stackoverflow.com/questions/2506411/how-to-troubleshoot-ora-02049-and-lock-problems-in-general-with-oracle
     @Override
-    public UserModel addUser(String username, RealmModel realm) {
-        logger.debugf("addUser called with username = {}", username);
-
-        if (!IdentityHelper.isValidUsername(entityManager,this.config, username)) {
-            logger.errorf("Username {} already exists", username);
-            throw new RuntimeException("Username already exists.");
-        }
-
-        Person p = null;
-        User u = null;
-
+    public UserModel addUser(final String username, final RealmModel realm) {
         try {
-            userTransaction.begin();
-
-            p = new Person();
-            p.setName(username);
-            p.setMiddle("-");
-            p.setFamily("-");
-            p.setIssn("-");
-            p.setStatus("1");
-            p.setCreation(Date.valueOf(LocalDate.now()));
-            em.persist(p);
-            em.flush();
-            userTransaction.commit();
-            em.getTransaction().commit();
-
-            // User will not have direct access upon registration.
-            // An update-password required action will be set for new users.
-            u = new User();
-            CredentialHelper temporaryCredential = new CredentialHelper.PasswordGeneratorBuilder()
-                    .useDigits(true)
-                    .useLower(true)
-                    .useUpper(true)
-                    .usePunctuation(true)
-                    .build();
-
-            u.setId(p.getId());
-            u.setPerson(p);
-            u.setUsername(username);
-            u.setPassword(temporaryCredential.generate(20));
-            u.setEmail("-");
-
-            em.persist(u);
-            em.flush();
-            em.clear();
-            userTransaction.commit();
-
-        } catch (NotSupportedException e) {
-            e.printStackTrace();
-        } catch (SystemException e) {
-            e.printStackTrace();
-        } catch (HeuristicRollbackException e) {
-            e.printStackTrace();
-        } catch (HeuristicMixedException e) {
-            e.printStackTrace();
-        } catch (RollbackException e) {
+            logger.infof("addUser() called with username: {}", username);
+            isValidUsername(username);
+            final Person person = persistPerson(username);
+            final User user = persistUser(person);
+            final UserAdapter userAdapter = new UserAdapter(this.session, realm, this.model, user);
+            logger.info("addUser() successful User: " + user);
+            logger.info("addUser() userAdapter: " + userAdapter);
+            return userAdapter;
+        } catch (PersistenceException e) {
+            logger.errorf("[ERROR] addUser() {} : {}", username, e.getMessage());
             e.printStackTrace();
         }
-        finally {
-            em.close();
-            try {
-                if (userTransaction.getStatus() == Status.STATUS_ACTIVE)
-                    userTransaction.rollback();
-            } catch (Throwable e) { }
-        }
-
-        UserAdapter userAdapter = new UserAdapter(this.session, realm, this.model, u);
-        // userAdapter.setEmailVerified(false);
-        // userAdapter.setEnabled(false);
-        // userAdapter.setPassword(u.getPassword());
-
-        logger.debugf("successful added user: {}", username);
-        return userAdapter;
+        return null;
     }
 
     @Override
-    public Boolean removeUser(String externalId) {
-        logger.debugf("removeUser called with externalId = {}", externalId);
-
-        User entity = getUserByUsername(externalId);
+    public Boolean updateUser(final User entity) {
+        logger.info("updateUser() called: " + entity);
         if (entity == null) return false;
-
-        em.getTransaction().begin();
-        em.remove(entity);
-        em.getTransaction().commit();
-
-        logger.infof("successful removed user: {}", entity.getUsername());
+        em.merge(entity);
+        logger.info("updateUser() successful updated user: " + entity);
         return true;
     }
 
+
     @Override
-    public Boolean updateUser(User entity) {
-        logger.debug("updateUser called");
-
+    public Boolean removeUser(final String externalId) {
+        logger.infof("removeUser() called with externalId: {}", externalId);
+        User entity = getUserByUsername(externalId);
         if (entity == null) return false;
-
-        em.getTransaction().begin();
-        em.merge(entity);
-        em.getTransaction().commit();
-
-        logger.infof("successful updated user: {}", entity.getUsername());
+        em.remove(entity.getPerson());
+        em.flush();
+        logger.infof("successful() removed user: {}", entity.getUsername());
         return true;
     }
 
@@ -300,4 +214,29 @@ public class UserRepository extends BaseFederationRepository<User> {
         logger.info(UserRepository.class.getSimpleName() + " closing...");
     }
 
+    private List<UserModel> getUsersModel(RealmModel realm, List<User> results) {
+        return results.stream().map(entity -> new UserAdapter(this.session, realm, this.model, entity))
+                .collect(Collectors.toCollection(LinkedList::new));
+    }
+
+    private User persistUser(Person person) {
+        final User user = userCreateBuilder.build(person);
+        em.persist(user);
+        em.flush();
+        return user;
+    }
+
+    private Person persistPerson(String username) {
+        final Person person = personCreateBuilder.build(username);
+        em.persist(person);
+        em.flush();
+        return person;
+    }
+
+    private void isValidUsername(String username) {
+        if (!IdentityHelper.isValidUsername(em, username)) {
+            logger.errorf("Username {} already exists", username);
+            throw new RuntimeException("Username already exists.");
+        }
+    }
 }

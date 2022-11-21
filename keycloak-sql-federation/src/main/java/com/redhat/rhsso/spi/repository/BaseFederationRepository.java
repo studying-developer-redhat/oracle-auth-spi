@@ -60,11 +60,11 @@ public class BaseFederationRepository<T> implements GenericRepository<T> {
         return null;
     }
 
-    public Boolean removeUser(String externalId) {
+    public Boolean updateUser(T entity) {
         return null;
     }
 
-    public Boolean updateUser(T entity) {
+    public Boolean removeUser(String externalId) {
         return null;
     }
 

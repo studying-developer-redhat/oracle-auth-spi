@@ -9,11 +9,10 @@ import java.util.List;
 
 public class IdentityHelper {
 
-    public static boolean isValidUsername(EntityManager em, UserFederationConfig configmap, String username) {
-        TypedQuery<User> query = em.createQuery(configmap.queryUserByUsername(), User.class);
+    public static boolean isValidUsername(EntityManager em, String username) {
+        TypedQuery<User> query = em.createNamedQuery(User.GET_USER_BY_USERNAME, User.class);
         query.setParameter("username", username);
         List<User> result = query.getResultList();
-
         return result.isEmpty();
     }
 
