@@ -16,6 +16,7 @@
     
 
     <properties>
+        <endorsed.dir>${project.build.directory}/endorsed</endorsed.dir>
         <version.keycloak>18.0.0.redhat-00001</version.keycloak>
         <version.jboss-ejb-api>1.0.0.Final</version.jboss-ejb-api>
         <maven.compiler.source>8</maven.compiler.source>
@@ -27,6 +28,8 @@
         <version.jackson>2.9.5</version.jackson>
         <jboss.logging.version>3.4.1.Final-redhat-00001</jboss.logging.version>
         <lombok.version>1.18.24</lombok.version>
+        <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
+        <ojdbc8.version>18.15.0.0</ojdbc8.version>
     </properties>
 
     <dependencyManagement>
@@ -127,14 +130,19 @@
             <artifactId>commons-logging</artifactId>
             <version>1.2</version>
         </dependency>
+        <!--
         <dependency>
-            <!-- must change to supported vendor version -->
             <groupId>com.oracle.ojdbc</groupId>
             <artifactId>ojdbc8</artifactId>
             <version>19.3.0.0</version>
             <scope>compile</scope>
         </dependency>
-
+        -->
+        <dependency>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc8</artifactId>
+            <version>${ojdbc8.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -150,10 +158,20 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven.compiler.plugin.version}</version>
+                <version>${maven-compiler-plugin.version}</version>
                 <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                    <compilerArguments>
+                        <endorseddirs>${endorsed.dir}</endorseddirs>
+                    </compilerArguments>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
         </plugins>

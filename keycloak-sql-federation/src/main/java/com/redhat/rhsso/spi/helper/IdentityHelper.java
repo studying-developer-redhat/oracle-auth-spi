@@ -10,7 +10,7 @@ import java.util.List;
 public class IdentityHelper {
 
     public static boolean isValidUsername(EntityManager em, String username) {
-        TypedQuery<User> query = em.createNamedQuery(User.GET_USER_BY_USERNAME, User.class);
+        TypedQuery<User> query = em.createNamedQuery(User.FIND_BY_USERNAME, User.class);
         query.setParameter("username", username);
         List<User> result = query.getResultList();
         return result.isEmpty();

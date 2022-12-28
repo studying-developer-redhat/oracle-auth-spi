@@ -1,91 +1,64 @@
 package com.redhat.rhsso.spi.adapter;
 
+import com.redhat.rhsso.spi.base.AbstractUserAdapter;
 import com.redhat.rhsso.spi.model.entity.User;
-import org.jboss.logging.Logger;
-import org.keycloak.common.util.MultivaluedHashMap;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.storage.StorageId;
-import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
-public class UserAdapter extends AbstractUserAdapterFederatedStorage {
-    protected static final Logger logger = Logger.getLogger(UserAdapter.class);
+@ToString
+@EqualsAndHashCode(callSuper = false, of = { "user", "keycloakId" })
+public class UserAdapter extends AbstractUserAdapter {
 
-    protected User entity;
+    private static final String PERSON_ID_ATTRIBUTE = "personId";
 
-    protected String keycloakId;
+    private final User user;
+    private final String keycloakId;
 
-    public UserAdapter(KeycloakSession session, RealmModel realm, ComponentModel model, User entity) {
+    public UserAdapter(KeycloakSession session, RealmModel realm, ComponentModel model, User user) {
         super(session, realm, model);
-        this.entity = entity;
-        this.keycloakId = StorageId.keycloakId(model, String.valueOf(getEntity().getId()));
-    }
-
-    public User getEntity() {
-        return this.entity;
-    }
-
-    public String getPassword() {
-        return getEntity().getPassword();
-    }
-
-    public void setPassword(String password) {
-        getEntity().setPassword(password);
-    }
-
-    @Override
-    public String getUsername() {
-        return getEntity().getUsername();
-    }
-
-    @Override
-    public void setUsername(String username) {
-        getEntity().setUsername(username);
-    }
-
-    @Override
-    public void setEmail(String email) {
-        getEntity().setEmail(email);
-    }
-
-    @Override
-    public String getEmail() {
-        return getEntity().getEmail();
+        this.user = user;
+        this.keycloakId = StorageId.keycloakId(model, user.getUsername());
     }
 
     @Override
     public String getId() {
-        return this.keycloakId;
+        return keycloakId;
     }
 
     @Override
-    public String getFirstName() {
-        return getEntity().getPerson().getName();
+    public String getUsername() {
+        return user.getUsername();
     }
 
     @Override
-    public String getLastName() {
-        return getEntity().getPerson().getFamily();
+    public void setUsername(String username) {
+        user.setUsername(username);
     }
 
     @Override
-    public void setFirstName(String firstName) {
-        getEntity().getPerson().setName(firstName);
+    public String getEmail() {
+        return user.getEmail();
     }
 
     @Override
-    public void setLastName(String lastName) {
-        getEntity().getPerson().setFamily(lastName);
+    public void setEmail(String email) {
+        user.setEmail(email);
     }
 
-    @Override
-    public  void setSingleAttribute(String name, String value) {
-        super.setSingleAttribute(name, value);
+    public String getPassword() {
+        return user.getPassword();
+    }
+
+    public void setPassword(final String password) {
+        this.user.setPassword(password);
     }
 
     @Override
@@ -93,10 +66,6 @@ public class UserAdapter extends AbstractUserAdapterFederatedStorage {
         super.removeAttribute(name);
     }
 
-    @Override
-    public  void setAttribute(String name, List<String> values) {
-        super.setAttribute(name, values);
-    }
 
     @Override
     public  String getFirstAttribute(String name) {
@@ -104,37 +73,23 @@ public class UserAdapter extends AbstractUserAdapterFederatedStorage {
     }
 
     @Override
-    public Map<String, List<String>> getAttributes() {
-        Map<String, List<String>> attrs = super.getAttributes();
-        MultivaluedHashMap<String, String> all = new MultivaluedHashMap<>();
-
-        // all.putAll(attrs);
-
-        return all;
+    public void addUserAttributes(Map<String, List<String>> attributes) {
+        if (user.getUsername() != null) {
+            attributes.put(PERSON_ID_ATTRIBUTE, Arrays.asList(user.getPerson().getId().toString()));
+        }
     }
 
     @Override
-    public  List<String> getAttribute(String name) {
-        return super.getAttribute(name);
+    public void setSingleAttribute(final String name, final String value) {
+        if (PERSON_ID_ATTRIBUTE.equalsIgnoreCase(name)) {
+            user.getPerson().setId(Long.valueOf(value));
+        }
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
-        UserAdapter that = (UserAdapter) o;
-        return getEntity().equals(that.getEntity()) &&
-                keycloakId.equals(that.keycloakId);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), getEntity(), keycloakId);
-    }
-
-    @Override
-    public String toString() {
-        return "UserAdapter [user=" + getEntity() + ", keycloakId=" + this.keycloakId + "]";
+    public void setAttribute(final String name, final List<String> values) {
+        if (!values.isEmpty()) {
+            setSingleAttribute(name, values.get(0));
+        }
     }
 }

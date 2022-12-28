@@ -2,10 +2,8 @@ package com.redhat.rhsso.spi.config;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.storage.UserStorageProviderModel;
-import javax.ejb.TransactionManagement;
-import javax.ejb.TransactionManagementType;
+
 import java.util.List;
 
 public class UserFederationConfig {
@@ -77,4 +75,11 @@ public class UserFederationConfig {
         return get(configmap().get(Constants.SQL_QUERY_SEARCH_USER), Constants.DEFAULT_SQL_QUERY_SEARCH_USER);
     }
 
+
+    @Override
+    public String toString() {
+        return "UserFederationConfig{" +
+                "configuration=" + configuration +
+                '}';
+    }
 }

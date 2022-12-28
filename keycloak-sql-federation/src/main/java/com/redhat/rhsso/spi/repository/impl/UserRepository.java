@@ -1,46 +1,27 @@
 package com.redhat.rhsso.spi.repository.impl;
 
-import com.redhat.rhsso.spi.adapter.UserAdapter;
-import com.redhat.rhsso.spi.config.UserFederationConfig;
-import com.redhat.rhsso.spi.helper.IdentityHelper;
 import com.redhat.rhsso.spi.model.builder.create.PersonCreateBuilder;
 import com.redhat.rhsso.spi.model.builder.create.UserCreateBuilder;
 import com.redhat.rhsso.spi.model.entity.Person;
 import com.redhat.rhsso.spi.model.entity.User;
-import com.redhat.rhsso.spi.repository.BaseFederationRepository;
 import org.jboss.logging.Logger;
-import org.keycloak.component.ComponentModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 
-import javax.annotation.PostConstruct;
 import javax.ejb.EJB;
-import javax.ejb.Remove;
 import javax.ejb.Stateless;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.NonUniqueResultException;
 import javax.persistence.PersistenceContext;
-import javax.persistence.PersistenceException;
-import javax.persistence.TypedQuery;
-import javax.transaction.Transactional;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Collection;
 
 @Stateless
-@Transactional
-public class UserRepository extends BaseFederationRepository<User> {
+public class UserRepository  {
 
-    protected static final Logger logger = Logger.getLogger(UserRepository.class);
+    private static final Logger LOGGER = Logger.getLogger(UserRepository.class);
 
-    protected UserFederationConfig config;
-
-    protected ComponentModel model;
-
-    protected KeycloakSession session;
-
-    @PersistenceContext
+    @PersistenceContext(unitName = "keycloak-user-storage-jpa")
     protected EntityManager em;
 
     @EJB
@@ -49,175 +30,132 @@ public class UserRepository extends BaseFederationRepository<User> {
     @EJB
     private UserCreateBuilder userCreateBuilder;
 
-    public UserFederationConfig getConfig() {
-        return config;
+    public boolean validateCredentials(final String username, final String password) {
+        LOGGER.infof("validateCredentials() {} {}", username, password);
+        final String encryptedPassword = encrypt(password);
+        final User user = findUserByUsername(username);
+        if (user == null) {
+            LOGGER.warn("User with username " + username + " not found");
+            return false;
+        }
+        LOGGER.info("User Password: " + password + ", Encrypted Password: " + encryptedPassword);
+        return user.getPassword() != null && user.getPassword().equals(encryptedPassword);
     }
 
-    public void setConfig(UserFederationConfig config) {
-        this.config = config;
+    private String encrypt(final String plainPassword) {
+        // TODO: You need to implement the algorithm
+        return plainPassword;
     }
 
-    @PostConstruct
-    protected void init() {
-        logger.info("initializing " + UserRepository.class.getSimpleName());
-    }
-
-    @Override
-    public User getUserById(Long id) {
-        logger.info("getUserById() called with id: " + id);
-
-        User entity = em.find(User.class, id);
-
-        if (entity == null || entity.getId() == null) {
-            logger.info("could not find user by id:" + id);
+    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+    public User updateCredentials(final String username, final String password) {
+        LOGGER.infof("updateCredentials() {} {}", username, password);
+        final String encryptedPassword = encrypt(password);
+        final User user = findUserByUsername(username);
+        if (user == null) {
+            LOGGER.warn("User with username " + username + " not found");
             return null;
         }
-
-        logger.info("Found user id: " + entity.getId());
-
-        return entity;
+        user.setPassword(encryptedPassword);
+        em.persist(user);
+        return user;
     }
 
-    public User getUserByUsername(String username) {
-        logger.info("getUserByUsername() called with username: " + username);
-        List<User> result = Collections.EMPTY_LIST;
+    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+    public User save(final String username) {
+        LOGGER.infof("save() {} ", username);
+        final Person person = persistPerson(username);
+        final User user = persistUser(person);
+        LOGGER.infof("Saving user: {}", user);
+        return user;
+    }
 
-        try {
-            TypedQuery<User> query = em.createNamedQuery(User.GET_USER_BY_USERNAME, User.class);
-            query.setParameter("username", username);
-
-            result = query.getResultList();
-
-            if (result.isEmpty()) {
-                logger.infof("username {} not found", username);
-            }
-        }catch (Exception e) {
-            logger.infof("getUserByUsername() failed with message: {}", e.getMessage());
+    @TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
+    public boolean remove(final String externalId) {
+        LOGGER.infof("remove() {} ", externalId);
+        final User user = this.findUserByUsername(externalId);
+        if (user == null) {
+            return false;
         }
-
-        return result.isEmpty() ? null : result.get(0);
+        em.remove(user);
+        return true;
     }
 
-    @Override
-    public User getUserByEmail(final String email) {
-        logger.infof("getUserByEmail() called with email: {}", email);
-
-        TypedQuery<User> query = em.createNamedQuery(User.GET_USER_BY_EMAIL,  User.class);
-        query.setParameter("email", email);
-        List<User> result = query.getResultList();
-        if (result.isEmpty()) {
-            logger.infof("could not find user by email: {}", email);
-        }
-        return result.isEmpty() ? null : result.get(0);
-    }
-
-    @Override
     public int getUsersCount() {
-        logger.info("getUsersCount() called");
+        LOGGER.info("getUsersCount() called");
         return ((Number) em.createNamedQuery(User.GET_USER_COUNT).getSingleResult()).intValue();
     }
 
+    /*
+    public int getUsersCount() {
+        final TypedQuery<Long> query = em.createNamedQuery("count", Long.class);
+        return query.getSingleResult() != null ? query.getSingleResult().intValue() : 0;
+    }
+     */
 
-    @Override
-    public List<UserModel> getUsers(Integer firstResult, Integer maxResults, RealmModel realm) {
-        logger.info("getUsers called");
-        TypedQuery<User> query = em.createNamedQuery(User.GET_ALL_USERS, User.class);
-        List<User> results = query.getResultList();
-
-        if (firstResult >= 0)
-            query.setFirstResult(firstResult);
-        if (maxResults >= 1)
-            query.setMaxResults(maxResults);
-
-        if (results.isEmpty()) {
-            logger.debug("No users found");
-            return Collections.EMPTY_LIST;
-        }
-
-        return getUsersModel(realm, results);
+    public Collection<User> findAll() {
+        LOGGER.info("findAll() called");
+        return em.createNamedQuery(User.FIND_ALL, User.class).getResultList();
     }
 
-    @Override
-    public List<UserModel> searchForUserByUsernameOrEmail(String search, Integer firstResult, Integer maxResults,
-                                                          RealmModel realm) {
-        logger.infof("searchForUserByUsernameOrEmail called with search: {}", search);
-
-        TypedQuery<User> query = em.createNamedQuery(User.SEARCH_FOR_USERNAME_OR_EMAIL, User.class);
-        query.setParameter("search", "%" + search.toLowerCase() + "%");
-
-        if (firstResult != -1) {
-            query.setFirstResult(firstResult);
-        }
-
-        if (maxResults != -1) {
-            query.setMaxResults(maxResults);
-        }
-
-        List<User> results = query.getResultList();
-
-        if (results.isEmpty()) {
-            logger.debug("User not found");
-            return Collections.EMPTY_LIST;
-        }
-
-        return getUsersModel(realm, results);
+    public Collection<User> findAll(final int firstResult, final int maxResults) {
+        LOGGER.info("findAll() firstResult, maxResults called");
+        return em.createNamedQuery(User.FIND_ALL, User.class)
+                .setFirstResult(firstResult)
+                .setMaxResults(maxResults)
+                .getResultList();
     }
 
-    // https://access.redhat.com/solutions/32314
-    // https://stackoverflow.com/questions/2506411/how-to-troubleshoot-ora-02049-and-lock-problems-in-general-with-oracle
-    @Override
-    public UserModel addUser(final String username, final RealmModel realm) {
+    public Collection<User> findAllByUsernameOrEmail(final String search) {
+        LOGGER.info("findAllByUsernameOrEmail() " + search);
+        return em.createNamedQuery(User.FIND_BY_USERNAME_OR_EMAIL, User.class)
+                .setParameter("search", search != null ? search.trim().toLowerCase() : "")
+                .getResultList();
+    }
+
+    public Collection<User> findAllByUsernameOrEmail(final String search, final int firstResult,
+                                                     final int maxResults) {
+        LOGGER.info("findAllByUsernameOrEmail() firstResult, maxResults" + search);
+        return em.createNamedQuery(User.FIND_BY_USERNAME_OR_EMAIL, User.class)
+                .setParameter("search", search != null ? search.trim().toLowerCase() : "")
+                .setFirstResult(firstResult)
+                .setMaxResults(maxResults)
+                .getResultList();
+    }
+
+
+    public User findUserByUsername(final String username) {
         try {
-            logger.infof("addUser() called with username: {}", username);
-            isValidUsername(username);
-            final Person person = persistPerson(username);
-            final User user = persistUser(person);
-            final UserAdapter userAdapter = new UserAdapter(this.session, realm, this.model, user);
-            logger.info("addUser() successful User: " + user);
-            logger.info("addUser() userAdapter: " + userAdapter);
-            return userAdapter;
-        } catch (PersistenceException e) {
-            logger.errorf("[ERROR] addUser() {} : {}", username, e.getMessage());
-            e.printStackTrace();
+            LOGGER.info("findUserByUsername() " + username);
+            User user = em.createNamedQuery(User.FIND_BY_USERNAME, User.class)
+                    .setParameter("username", username != null ? username.trim().toLowerCase() : "")
+                    .getSingleResult();
+            LOGGER.info("findUserByUsername() User" + user.toString());
+            return user;
+        } catch (final NoResultException e) {
+            LOGGER.warn("No result found for username " + username);
+            return null;
+        } catch (final NonUniqueResultException e) {
+            LOGGER.warn("More than one result for username " + username);
+            return null;
         }
-        return null;
     }
 
-    @Override
-    public Boolean updateUser(final User entity) {
-        logger.info("updateUser() called: " + entity);
-        if (entity == null) return false;
-        em.merge(entity);
-        logger.info("updateUser() successful updated user: " + entity);
-        return true;
+    public User findUserByEmail(final String email) {
+        try {
+            LOGGER.info("findUserByEmail() " + email);
+            return em.createNamedQuery(User.FIND_BY_EMAIL, User.class)
+                    .setParameter("email", email != null ? email.trim().toLowerCase() : "")
+                    .getSingleResult();
+        } catch (final NoResultException e) {
+            LOGGER.warn("No result found for email " + email);
+            return null;
+        } catch (NonUniqueResultException e) {
+            LOGGER.warn("More than one result for email " + email);
+            return null;
+        }
     }
 
-
-    @Override
-    public Boolean removeUser(final String externalId) {
-        logger.infof("removeUser() called with externalId: {}", externalId);
-        User entity = getUserByUsername(externalId);
-        if (entity == null) return false;
-        em.remove(entity.getPerson());
-        em.flush();
-        logger.infof("successful() removed user: {}", entity.getUsername());
-        return true;
-    }
-
-    @Override
-    public Boolean isValidPassword(String credential) {
-        return IdentityHelper.isValidPassword(credential, this.config);
-    }
-
-    @Remove
-    public void close() {
-        logger.info(UserRepository.class.getSimpleName() + " closing...");
-    }
-
-    private List<UserModel> getUsersModel(RealmModel realm, List<User> results) {
-        return results.stream().map(entity -> new UserAdapter(this.session, realm, this.model, entity))
-                .collect(Collectors.toCollection(LinkedList::new));
-    }
 
     private User persistUser(Person person) {
         final User user = userCreateBuilder.build(person);
@@ -231,12 +169,5 @@ public class UserRepository extends BaseFederationRepository<User> {
         em.persist(person);
         em.flush();
         return person;
-    }
-
-    private void isValidUsername(String username) {
-        if (!IdentityHelper.isValidUsername(em, username)) {
-            logger.errorf("Username {} already exists", username);
-            throw new RuntimeException("Username already exists.");
-        }
     }
 }

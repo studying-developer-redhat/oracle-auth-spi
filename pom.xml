@@ -65,7 +65,7 @@
         <mariadb.driver.version>2.7.2.redhat-00001</mariadb.driver.version>
         <mssql.version>2019-CU10-ubuntu-20.04</mssql.version>
         <mssql.driver.version>9.2.0.jre8</mssql.driver.version>
-        <oracle.driver.version>19.3.0.0</oracle.driver.version>
+        <oracle.driver.version>15.3.0.0</oracle.driver.version>
 
         <nexusReleaseRepoUrl></nexusReleaseRepoUrl>
         <nexusSnapshotRepoUrl></nexusSnapshotRepoUrl>
