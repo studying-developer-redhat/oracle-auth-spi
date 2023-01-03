@@ -9,14 +9,14 @@ import javax.ejb.Stateless;
 public class PersonUpdateBuilder {
 
     public Person build(final PersonDTO personDTO) {
-        return Person.builder()
-                .id(personDTO.getId())
-                .name(personDTO.getName())
-                .middle(personDTO.getMiddle())
-                .family(personDTO.getFamily())
-                .issn(personDTO.getIssn())
-                .status(personDTO.getStatus())
-                .creation(personDTO.getCreation())
-                .build();
+        Person person = new Person();
+        person.setId(personDTO.getId());
+        person.setName(personDTO.getName());
+        person.setMiddle(personDTO.getMiddle());
+        person.setFamily(personDTO.getFamily());
+        person.setIssn(personDTO.getIssn());
+        person.setStatus(personDTO.getStatus());
+        person.setCreation(personDTO.getCreation());
+        return person;
     }
 }

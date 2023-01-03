@@ -9,13 +9,16 @@ import java.time.LocalDate;
 public class PersonCreateBuilder {
 
     public Person build(final String username) {
-        return Person.builder()
-                .name(username)
-                .middle("-")
-                .family("-")
-                .issn("-")
-                .status("1")
-                .creation(Date.valueOf(LocalDate.now()))
-                .build();
+
+        Person person = new Person();
+        person.setName(username);
+        person.setMiddle("-");
+        person.setFamily("-");
+        person.setIssn("-");
+        person.setStatus("1");
+        person.setCreation(Date.valueOf(LocalDate.now()));
+
+        return person;
+
     }
 }

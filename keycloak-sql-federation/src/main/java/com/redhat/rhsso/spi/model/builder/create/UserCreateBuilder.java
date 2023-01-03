@@ -9,13 +9,15 @@ import javax.ejb.Stateless;
 public class UserCreateBuilder {
 
     public User build(final Person person) {
-        return User.builder()
-                .id(person.getId())
-                .person(person)
-                .username(person.getName())
-                .password(getTemporaryCredential().generate(20))
-                .email("-")
-                .build();
+
+        User user = new User();
+        user.setId(person.getId());
+        user.setPerson(person);
+        user.setUsername(person.getName());
+        user.setPassword(getTemporaryCredential().generate(20));
+        user.setEmail("-");
+
+        return user;
     }
 
 

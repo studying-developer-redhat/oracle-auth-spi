@@ -13,9 +13,9 @@
 
         <jta-data-source>java:jboss/datasources/OracleDS</jta-data-source>
 
-        <!--
+
         <class>com.redhat.rhsso.spi.model.entity.Person</class>
-        <class>com.redhat.rhsso.spi.model.entity.User</class> -->
+        <class>com.redhat.rhsso.spi.model.entity.User</class>
 
         <properties>
             <property name="hibernate.hbm2ddl.auto" value="validate" /> <!-- create | create-drop | update | validate -->

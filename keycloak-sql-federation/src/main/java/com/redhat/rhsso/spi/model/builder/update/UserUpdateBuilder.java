@@ -15,12 +15,12 @@ public class UserUpdateBuilder {
 
     public User build(final UserDTO userDTO) {
         final Person person = personUpdateBuilder.build(userDTO.getPerson());
-        return User.builder()
-                .id(userDTO.getId())
-                .person(person)
-                .username(userDTO.getUsername())
-                .password(userDTO.getPassword())
-                .email(userDTO.getEmail())
-                .build();
+        User user = new User();
+        user.setId(userDTO.getId());
+        user.setPerson(person);
+        user.setUsername(userDTO.getUsername());
+        user.setPassword(userDTO.getPassword());
+        user.setEmail(userDTO.getEmail());
+        return user;
     }
 }

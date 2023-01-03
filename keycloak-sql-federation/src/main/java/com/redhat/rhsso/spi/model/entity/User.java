@@ -1,17 +1,9 @@
 package com.redhat.rhsso.spi.model.entity;
 
-import lombok.*;
-
 import javax.persistence.*;
 import java.io.Serializable;
+import java.util.Objects;
 
-@ToString
-@Builder
-@Setter
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@EqualsAndHashCode
 @NamedQueries({
         @NamedQuery(name = User.FIND_BY_USERNAME, query = "select u from User u where lower(u.username) = lower(:username)"),
         @NamedQuery(name = User.FIND_BY_EMAIL, query = "select u from User u where lower(u.email) = lower(:email)"),
@@ -50,4 +42,77 @@ public class User implements Serializable {
     @Column(name = "DS_EMAIL", nullable = false, length = 255)
     private String email;
 
+    public User() {}
+
+    public User(Long id, Person person, String username, String password, String email) {
+        this.id = id;
+        this.person = person;
+        this.username = username;
+        this.password = password;
+        this.email = email;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Person getPerson() {
+        return person;
+    }
+
+    public void setPerson(Person person) {
+        this.person = person;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "id=" + id +
+                ", person=" + person +
+                ", username='" + username + '\'' +
+                ", password='" + password + '\'' +
+                ", email='" + email + '\'' +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return id.equals(user.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 }

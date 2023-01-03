@@ -6,14 +6,8 @@ import lombok.*;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.sql.Date;
+import java.util.Objects;
 
-@ToString
-@Builder
-@Setter
-@Getter
-@AllArgsConstructor
-@NoArgsConstructor
-@EqualsAndHashCode
 @NamedQueries({
         @NamedQuery(name = Person.GET_PERSON_BY_ISSN, query = "select p from Person p where p.id = :issn")
 })
@@ -53,4 +47,107 @@ public class Person implements Serializable {
     @JoinColumn(name = "ID_PERSON")
     private User user;
 
+    public Person() { }
+
+    public Person(Long id, String name, String middle, String family, String issn, Date creation, String status, User user) {
+        this.id = id;
+        this.name = name;
+        this.middle = middle;
+        this.family = family;
+        this.issn = issn;
+        this.creation = creation;
+        this.status = status;
+        this.user = user;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getMiddle() {
+        return middle;
+    }
+
+    public void setMiddle(String middle) {
+        this.middle = middle;
+    }
+
+    public String getFamily() {
+        return family;
+    }
+
+    public void setFamily(String family) {
+        this.family = family;
+    }
+
+    public String getIssn() {
+        return issn;
+    }
+
+    public void setIssn(String issn) {
+        this.issn = issn;
+    }
+
+    public Date getCreation() {
+        return creation;
+    }
+
+    public void setCreation(Date creation) {
+        this.creation = creation;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    @Override
+    public String toString() {
+        return "Person{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", middle='" + middle + '\'' +
+                ", family='" + family + '\'' +
+                ", issn='" + issn + '\'' +
+                ", creation=" + creation +
+                ", status='" + status + '\'' +
+                ", user=" + user +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Person person = (Person) o;
+        return id.equals(person.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 }
